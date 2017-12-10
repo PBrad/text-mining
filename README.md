@@ -13,7 +13,7 @@ This project includes my notes/code for working through Julia Silge and David Ro
 Log
 ---
 
-20171209 -
+20171210 - through Chapter 1 - gutenbergr multi-text frequencies
 
 Related Resources
 -----------------

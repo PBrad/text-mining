@@ -17,7 +17,7 @@ https://github.com/dgrtwo/tidy-text-mining
 
 ## Log
 
-20171209 - 
+20171210 - through Chapter 1 - gutenbergr multi-text frequencies
 
 ## Related Resources
 
