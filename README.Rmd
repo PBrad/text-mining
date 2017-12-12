@@ -19,6 +19,8 @@ https://github.com/dgrtwo/tidy-text-mining
 
 20171210 - through Chapter 1 - gutenbergr multi-text frequencies
 
+20171212 - finished Chapter 1
+
 ## Related Resources
 
 https://cran.r-project.org/web/views/NaturalLanguageProcessing.html
