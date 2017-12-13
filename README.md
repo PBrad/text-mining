@@ -13,6 +13,8 @@ This project includes my notes/code for working through Julia Silge and David Ro
 Log
 ---
 
+20171212 - finished Chapter 1/starting in on Chapter 2
+
 20171210 - through Chapter 1 - gutenbergr multi-text frequencies
 
 Related Resources
