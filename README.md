@@ -13,6 +13,10 @@ This project includes my notes/code for working through Julia Silge and David Ro
 Log
 ---
 
+20171216 - Started Chapter 4 - pick back up with "Using bigrams to provide context in sentiment analysis""
+
+20171215 - Finished Chapter 3
+
 20171213 - Finished Chapter 2
 
 20171212 - finished Chapter 1/starting in on Chapter 2
