@@ -15,6 +15,8 @@ This project includes my notes/code for working through Julia Silge and David Ro
 Log
 ---
 
+20171221 - Up to network analysis in Chapter 4
+
 20171218 - Created IOSlides presentation with interactive plot
 
 20171216 - Started Chapter 4 - pick back up with "Using bigrams to provide context in sentiment analysis""
