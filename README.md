@@ -15,6 +15,12 @@ This project includes my notes/code for working through Julia Silge and David Ro
 Log
 ---
 
+20171224 - Up to the mining financial articles example in Chapter 5
+
+20171223 - Up to quanteda package in Chapter 5
+
+20171222 - Finished Chapter 4
+
 20171221 - Up to network analysis in Chapter 4
 
 20171218 - Created IOSlides presentation with interactive plot

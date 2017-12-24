@@ -91,3 +91,136 @@ data("data_corpus_inaugural", package = "quanteda") # Presidential inaugural spe
 inaug_dfm <- quanteda::dfm(data_corpus_inaugural, verbose = FALSE)
 
 inaug_dfm
+
+# tidy() lets us tokenize the object
+
+inaug_td <- tidy(inaug_dfm)
+inaug_td
+
+# Find words most specific to each speech with tf-idf
+inaug_tf_idf <- inaug_td %>%
+  bind_tf_idf(term, document, count) %>%
+  arrange(desc(tf_idf))
+
+inaug_tf_idf
+
+# Check out four specific presidents
+inaug_tf_idf %>%
+  filter(document %in% c("1861-Lincoln",
+                         "1933-Roosevelt",
+                         "1961-Kennedy",
+                         "2009-Obama")) %>% 
+  arrange(desc(tf_idf)) %>%
+  mutate(term = factor(term, levels = rev(unique(term)))) %>% 
+  group_by(document) %>% 
+  top_n(15) %>% 
+  ungroup %>%
+  ggplot(aes(term, tf_idf, fill = document)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = NULL, y = "tf-idf") +
+  facet_wrap(~document, ncol = 2, scales = "free") +
+  coord_flip()
+
+# Now extract the year from each document's name and calculate the number of
+## words by year
+
+library(tidyr)
+
+year_term_counts <- inaug_td %>%
+  extract(document, "year", "(\\d+)", convert = TRUE) %>% # this is a good trick
+  # complete includes 0's (indicating words that didn't appear in a doc)
+  complete(year, term, fill = list(count = 0)) %>% # 
+  group_by(year) %>%
+  mutate(year_total = sum(count))
+
+# Select words and see how they change in frequency over time
+
+year_term_counts %>%
+  filter(term %in% c("god", "america", "foreign", "union", "constitution", "freedom")) %>%
+  ggplot(aes(year, count / year_total)) +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~ term, scales = "free_y") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  ylab("% frequency of word in inaugural address")
+
+# Casting tidy text data into a matrix ------------------------------------
+
+# Use cast_ verbs from tidytext to create document-term matrices for algorithms
+## that expect such objects
+
+# E.g., cast tidy AP data back into a DTM
+
+ap_td %>%
+  cast_dtm(document, term, count)
+
+# Alternatively, could cast into a document-feature-matrix
+ap_td %>%
+  cast_dfm(term, document, count)
+
+# Some tools require a sparse matrix
+library(Matrix)
+
+# cast into a Matrix object
+m <- ap_td %>%
+  cast_sparse(document, term, count)
+
+class(m)
+
+dim(m)
+
+# Create a DTM of Jane Austen's books
+library(janeaustenr)
+
+austen_dtm <- austen_books() %>%
+  unnest_tokens(word, text) %>%
+  count(book, word) %>%
+  cast_dtm(book, word, n)
+
+austen_dtm
+
+# This approach allows for reading, filtering, and processing with dplyr
+## and other tidy tools, then conversion into DTMs/DFMs for machine learning
+
+# Tidying corpus objects with metadata ------------------------------------
+
+# Corpus structures (e.g., the Corpus objects in the tm package) store additional
+## metadata alongside the text, such as D, date/time, title, or language for 
+## each document.
+
+# The acq corpus from tm includes 50 Reuters articles
+data("acq")
+acq
+
+# Corpus objects are structured like lists.
+## First document
+acq[[1]]
+
+# While this is a flexible storage format, it isn't conducive to using tidy tools
+## Use tidy() to create one row per document, with metadata included in separate
+## columns alongside the text
+
+acq_td <- tidy(acq)
+acq_td
+
+# Can now use unnest_tokens() to find most common words across the documents
+acq_tokens <- acq_td %>%
+  select(-places) %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words, by = "word")
+
+# most common words across all docs
+acq_tokens %>%
+  count(word, sort = TRUE)
+
+# Or words specific to each doc
+# tf-idf
+acq_tokens %>%
+  count(id, word) %>%
+  bind_tf_idf(word, id, n) %>%
+  arrange(desc(tf_idf))
+
+
+# Example: Mining financial articles --------------------------------------
+
+
