@@ -15,6 +15,8 @@ This project includes my notes/code for working through Julia Silge and David Ro
 Log
 ---
 
+20171225 - Merry Christmas! Began financial article case study. Difficult loading tm.plugin.webmining package due to Java depenencies.
+
 20171224 - Up to the mining financial articles example in Chapter 5
 
 20171223 - Up to quanteda package in Chapter 5

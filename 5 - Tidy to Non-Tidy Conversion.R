@@ -223,4 +223,25 @@ acq_tokens %>%
 
 # Example: Mining financial articles --------------------------------------
 
+# Notes that corpus objects are common output format for data ingesting (scraping?)
+## packages. Provides example of tm.plugin.webmining - connects to online feeds
+## to retrieve news artciles based on a keyword. 
+## WebCorpus(GoogleFinanceSource("NASDAQ:MSFT")) retrieves 20 most recent articles
+## related to Microsoft (MSFT) stock
 
+# As an example, we're going to retrieve articles relevant to nine tech stocks
+
+library(tm.plugin.webmining) # Looks like you need Java for this. Getting an error.
+library(purrr)
+
+company <- c("Microsoft", "Apple", "Google", "Amazon", "Facebook",
+             "Twitter", "IBM", "Yahoo", "Netflix")
+symbol <- c("MSFT", "AAPL", "GOOG", "AMZN", "FB", "TWTR", "IBM", "YHOO", "NFLX")
+
+download_articles <- function(symbol) {
+  WebCorpus(GoogleFinanceSource(paste0("NASDAQ:", symbol)))
+}
+
+stock_articles <- data_frame(company = company,
+                             symbol = symbol) %>%
+  mutate(corpus = map(symbol, download_articles))
