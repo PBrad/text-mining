@@ -19,6 +19,8 @@ http://rmarkdown.rstudio.com/ioslides_presentation_format.html
 
 ## Log
 
+20171227 - Up to document-topic probabilities in Chapter 6
+
 20171226 - Finished Chapter 5
 
 20171225 - Merry Christmas! Began financial article case study. Difficult loading

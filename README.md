@@ -15,6 +15,8 @@ This project includes my notes/code for working through Julia Silge and David Ro
 Log
 ---
 
+20171227 - Up to document-topic probabilities in Chapter 6
+
 20171226 - Finished Chapter 5
 
 20171225 - Merry Christmas! Began financial article case study. Difficult loading tm.plugin.webmining package due to Java depenencies.
