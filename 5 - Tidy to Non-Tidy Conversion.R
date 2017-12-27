@@ -244,4 +244,69 @@ download_articles <- function(symbol) {
 
 stock_articles <- data_frame(company = company,
                              symbol = symbol) %>%
-  mutate(corpus = map(symbol, download_articles))
+  # map applies function to every object in symbol
+  mutate(corpus = map(symbol, download_articles)) 
+
+# Convert to data frame with tidy() then unnest with unnest_tokens()
+stock_tokens <- stock_articles %>%
+  unnest(map(corpus, tidy)) %>%
+  unnest_tokens(word, text) %>%
+  select(company, datetimestamp, word, id, heading)
+
+# tf-idf to find words most specific to each stock
+library(stringr)
+
+stock_tf_idf <- stock_tokens %>%
+  count(company, word) %>%
+  filter(!str_detect(word, "\\d+")) %>%
+  bind_tf_idf(word, company, n) %>%
+  arrange(-tf_idf)
+
+# Determine what words contribute most to positive/negative sentiments
+stock_tokens %>%
+  anti_join(stop_words, by = "word") %>%
+  count(word, id, sort = TRUE) %>%
+  inner_join(get_sentiments("afinn"), by = "word") %>%
+  group_by(word) %>%
+  summarize(contribution = sum(n * score)) %>%
+  top_n(12, abs(contribution)) %>%
+  mutate(word = reorder(word, contribution)) %>%
+  ggplot(aes(word, contribution)) +
+  geom_col() +
+  coord_flip() +
+  labs(y = "Frequency of word * AFINN score")
+
+# Need to use another sentiment lexicon better suited to finance: 
+## Loughran and McDonald dictionary of financial sentiment terms
+## avoids words like "share", "fool", "liability", "risk"
+## Divides words into six sentiments - positive, negative, litigious,
+## uncertain, constraining, and superfluous.
+
+stock_tokens %>%
+  count(word) %>%
+  inner_join(get_sentiments("loughran"), by = "word") %>%
+  group_by(sentiment) %>%
+  top_n(5, n) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_col() +
+  coord_flip() +
+  facet_wrap(~ sentiment, scales = "free") +
+  ylab("Frequency of this word in the recent financial articles")
+
+# Count number of uses of each sentiment-associated word in each corpus
+stock_sentiment_count <- stock_tokens %>%
+  inner_join(get_sentiments("loughran"), by = "word") %>%
+  count(sentiment, company) %>%
+  spread(sentiment, n, fill = 0)
+
+# Rough measure of sentiment --> (positive - negative) / (positive + negative)
+stock_sentiment_count %>%
+  mutate(score = (positive - negative) / (positive + negative)) %>%
+  mutate(company = reorder(company, score)) %>%
+  ggplot(aes(company, score, fill = score > 0)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  labs(x = "Company",
+       y = "Positivity score among 20 recent news articles")

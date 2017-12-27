@@ -19,6 +19,8 @@ http://rmarkdown.rstudio.com/ioslides_presentation_format.html
 
 ## Log
 
+20171226 - Finished Chapter 5
+
 20171225 - Merry Christmas! Began financial article case study. Difficult loading
 tm.plugin.webmining package due to Java depenencies. 
 
