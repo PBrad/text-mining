@@ -90,3 +90,219 @@ beta_spread %>%
   geom_bar(stat = "identity") +
   ylab("Log2 ratio of beta in topic 2 / topic 1") +
   coord_flip()
+
+# Document-topic probabilities --------------------------------------------
+
+# Examing per-document-per-topic probabilities, called "gamma"
+## Each value is an estimated proportion of words from that document that are generated
+## from that topic.
+
+ap_documents <- tidy(ap_lda, matrix = "gamma")
+ap_documents
+
+# Looks like most documents are a mix of topics but doc 6 is almost exclusively
+## topic 2. Check this by looking at most common words in that doc
+
+tidy(AssociatedPress) %>%
+  filter(document == 6) %>%
+  arrange(desc(count))
+
+# Example: the great library heist ----------------------------------------
+## Four books - chapters torn apart, unlabeled, and placed in a pile
+## Use topic modeling to see how the chapters cluster - should tell us
+## which chapters belongs to which book
+
+# Retrieve text with gutenbergr package
+titles <- c("Twenty Thousand Leagues under the Sea", "The War of the Worlds",
+            "Pride and Prejudice", "Great Expectations")
+
+library(gutenbergr)
+
+books <- gutenberg_works(title %in% titles) %>%
+  gutenberg_download(meta_fields = "title")
+
+# Tokenize into separate words, remove stop words, and treat each chapter as sep document
+
+library(stringr)
+
+# divide into documents, each representing one chapter
+by_chapter <- books %>%
+  group_by(title) %>%
+  mutate(chapter = cumsum(str_detect(text, regex("^chapter ", ignore_case = TRUE)))) %>%
+  ungroup() %>%
+  filter(chapter > 0) %>%
+  unite(document, title, chapter)
+
+# split into words
+by_chapter_word <- by_chapter %>%
+  unnest_tokens(word, text)
+
+# find document-word counts
+word_counts <- by_chapter_word %>%
+  anti_join(stop_words) %>%
+  count(document, word, sort = TRUE) %>%
+  ungroup()
+
+word_counts
+
+# LDA on chapters ---------------------------------------------------------
+
+# topicmodels package requires DocumentTermMatrix, so convert tidy to DTM
+
+chapters_dtm <- word_counts %>%
+  cast_dtm(document, word, n)
+
+chapters_dtm
+
+# Use LDA to create a four-topic model
+chapters_lda <- LDA(chapters_dtm, k = 4, control = list(seed = 1234))
+chapters_lda
+
+# Check per-topic-per-word probabilities
+chapter_topics <- tidy(chapters_lda, matrix = "beta")
+chapter_topics
+
+# top five terms in each topic
+top_terms <- chapter_topics %>%
+  group_by(topic) %>%
+  top_n(5, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms
+
+# Visualize
+library(ggplot2)
+
+top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip()
+
+# Per-document classification ---------------------------------------------
+# Try to put the chapters back in the right books by looking at gamma 
+## - the per-document-per-topic probabilities
+
+chapters_gamma <- tidy(chapters_lda, matrix = "gamma")
+chapters_gamma
+
+# Would expect chapters within a book to be mostly generated from the corresponding topic
+
+# Separate doc name into title and chapter
+chapters_gamma <- chapters_gamma %>%
+  separate(document, c("title", "chapter"), sep = "_", convert = TRUE)
+
+chapters_gamma
+
+# reorder titles in order of topic 1, topic 2, etc before plotting
+chapters_gamma %>%
+  mutate(title = reorder(title, gamma * topic)) %>%
+  ggplot(aes(factor(topic), gamma)) +
+  geom_boxplot() +
+  facet_wrap(~ title)
+
+# Check for cases where topic most associated w/ a chapter belonged to another book
+# First find topic most associated with each chapter using top_n()
+chapter_classifications <- chapters_gamma %>%
+  group_by(title, chapter) %>%
+  top_n(1, gamma) %>%
+  ungroup()
+
+chapter_classifications
+
+# Then compare to the "consensus" topic for each book to see which were misidentified
+book_topics <- chapter_classifications %>%
+  count(title, topic) %>%
+  group_by(title) %>%
+  top_n(1, n) %>%
+  ungroup() %>%
+  transmute(consensus = title, topic)
+
+chapter_classifications %>%
+  inner_join(book_topics, by = "topic") %>%
+  filter(title != consensus)
+
+# Just two chapters from Great Expectations are misclassified
+
+# By word assignments: augment --------------------------------------------
+
+# Use augment() to identify which words in each document were assigned to which topic
+## Augment adds information to each observation in the original data. In this case,
+## will add a column (".topic") with the topic each term was assigned to within the doc
+
+assignments <- augment(chapters_lda, data = chapters_dtm)
+assignments
+
+# Now join with consensus titles to see which were misclassified
+assignments <- assignments %>%
+  separate(document, c("title", "chapter"), sep = "_", convert = TRUE) %>%
+  inner_join(book_topics, by = c(".topic" = "topic"))
+
+assignments
+
+# Visualize a confusion matrix, showing how often words from one book were assigned
+## to another
+
+library(scales)
+
+assignments %>%
+  count(title, consensus, wt = count) %>%
+  group_by(title) %>%
+  mutate(percent = n / sum(n)) %>%
+  ggplot(aes(consensus, title, fill = percent)) +
+  geom_tile() +
+  scale_fill_gradient2(high = "red", label = percent_format()) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        panel.grid = element_blank()) +
+  labs(x = "Book words were assigned to",
+       y = "Book words came from",
+       fill = "% of assignments")
+
+# Find most commonly mistaken words
+wrong_words <- assignments %>%
+  filter(title != consensus)
+
+wrong_words
+
+wrong_words %>%
+  count(title, consensus, term, wt = count) %>%
+  ungroup() %>%
+  arrange(desc(n))
+
+# Alternative LDA implementations -----------------------------------------
+
+# LDA function in topicmodels package is only one implementation of the latent
+## Dirichlet allocation algorithm. mallet package is another example. Requires
+## non-tokenized docs as inputs, performs tokenization itselt. Also requires
+## separate file of stopwords. 
+
+library(mallet) # issue loading mallet due to requirement of Java
+
+# create a vector with one string per chapter (for non-tokenized input)
+collapsed <- by_chapter_word %>%
+  anti_join(stop_words, by = "word") %>%
+  mutate(word = str_replace(word, "'", "")) %>%
+  group_by(document) %>%
+  summarize(text = paste(word, collapse = " "))
+
+# create an empty file of "stopwords"
+file.create(empty_file <- tempfile())
+docs <- mallet.import(collapsed$document, collapsed$text, empty_file)
+
+mallet_model <- MalletLDA(num.topics = 4)
+mallet_model$loadDocuments(docs)
+mallet_model$train(100)
+
+# Once model is created, use tidy approach to explore
+# word-topic pairs
+tidy(mallet_model)
+
+# document-topic pairs
+tidy(mallet_model, matrix = "gamma")
+
+# column needs to be named "term" for "augment"
+term_counts <- rename(word_counts, term = word)
+augment(mallet_model, term_counts)

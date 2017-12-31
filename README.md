@@ -15,6 +15,8 @@ This project includes my notes/code for working through Julia Silge and David Ro
 Log
 ---
 
+20171230 - Finished Chapter 6
+
 20171227 - Up to document-topic probabilities in Chapter 6
 
 20171226 - Finished Chapter 5
