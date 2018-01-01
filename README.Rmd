@@ -19,6 +19,8 @@ http://rmarkdown.rstudio.com/ioslides_presentation_format.html
 
 ## Log
 
+20180101 - Happy New Year! Finished Chapter 7
+
 20171231 - Through changes in word use in Chapter 7
 
 20171230 - Finished Chapter 6
