@@ -15,6 +15,8 @@ This project includes my notes/code for working through Julia Silge and David Ro
 Log
 ---
 
+20180103 - Finished Chapter 9 (and the book!) - Overall, does a convincing job of selling the tidy approach to text analysis. As a future project(s), I'm going to pick some text data (likely starting with a book) and performing similar analyses. Beyond just the text analysis, I picked up some nice tricks for use in dplyr and other tidy packages that I had previously been unaware of (e.g., top\_n, aesthetics of some of the graphs, reordering for ggplot in mutate rather than in the aes) and new (to me) packages like widyr. It was also just helpful to read through Julia/David's code to see their "style"/approach.
+
 20180102 - Finished Chapter 8
 
 20180101 - Happy New Year! Finished Chapter 7
