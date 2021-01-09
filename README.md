@@ -62,6 +62,12 @@ Check out these packages for natural langauge processing:
 -   cleanNLP
 -   sentimentr
 
+Attribution
+-----------------
+
+"Text Mining with R: A Tidy Approach" - written by Julia Silge and David Robinson
+<http://tidytextmining.com>
+
 License
 -----------------
 
